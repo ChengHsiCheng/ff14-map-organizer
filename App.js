@@ -191,8 +191,6 @@ function App() {
           </ul>
           <hr style={{ border: 'none', borderTop: '1px solid #333', margin: '20px 0' }} />
           <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>
-            當前已過濾伺服器：<br />
-            陸行鳥、莫古力、卡班庫爾等...
           </p>
         </div>
 
