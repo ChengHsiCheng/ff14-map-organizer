@@ -1,10 +1,10 @@
-// 注意：這裡移除了 import React, { useState, useMemo } from 'react';
-// 因為它會由 index.html 中的 Babel Standalone 處理
+// 必須加入這一行，告訴瀏覽器去哪裡找這些功能
+const { useState, useMemo } = React;
 
-// 讓 App 組件可以在全域被 index.html 引用
 function App() {
   const [rawData, setRawData] = useState('');
-  // mapPresets 現在從 window.mapPresets 取得
+  
+  // 確保使用 window.mapPresets 讀取全域變數
   const [activeGroup, setActiveGroup] = useState(Object.keys(window.mapPresets)[0]);
 
   const currentSettings = window.mapPresets[activeGroup];
@@ -15,7 +15,7 @@ function App() {
     if (!rawData.trim()) return [];
     const lines = rawData.split('\n');
     
-    const results = lines.map((line, index) => {
+    const results = lines.map((line) => {
       const regex = /(?:\[\d+:\d+\])?(?:(.+?)[:：])?\s*?(.+?)\s*\(\s*(\d+\.?\d*)\s*[,，]\s*(\d+\.?\d*)\s*\)/;
       const match = line.match(regex);
 
@@ -66,7 +66,6 @@ function App() {
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#111', color: '#eee', fontFamily: 'sans-serif' }}>
       
-      {/* 左側選單：組別切換 */}
       <div style={{ width: '280px', borderRight: '1px solid #333', padding: '20px', background: '#161616' }}>
         <h3 style={{ color: '#ff9800', marginBottom: '20px' }}>📁 選擇地圖組</h3>
         {Object.keys(window.mapPresets).map(groupName => (
@@ -91,21 +90,17 @@ function App() {
               • {map.name}
             </div>
           ))}
-          <p style={{ fontSize: '11px', color: '#444', marginTop: '10px' }}>※ 非以上區域之座標將自動忽略</p>
         </div>
       </div>
 
-      {/* 右側：主介面 */}
       <div style={{ flex: 1, padding: '30px', display: 'flex', flexDirection: 'column' }}>
-        <h2>⚔️ 路線自動排序 (組別過濾模式)</h2>
-
+        <h2>⚔️ 路線自動排序</h2>
         <textarea
           value={rawData}
           onChange={(e) => setRawData(e.target.value)}
-          placeholder="貼上聊天內容... (不屬於當前組別的地圖將不會顯示)"
+          placeholder="貼上聊天內容..."
           style={{ width: '100%', height: '120px', background: '#1e1e1e', color: '#fff', border: '1px solid #444', padding: '15px', borderRadius: '4px' }}
         />
-
         <div style={{ margin: '20px 0', display: 'flex', gap: '10px' }}>
           <button
             onClick={copyChainFormat}
@@ -127,7 +122,6 @@ function App() {
                 <th>玩家名稱</th>
                 <th>區域</th>
                 <th>最近傳送點</th>
-                <th>相對距離</th>
               </tr>
             </thead>
             <tbody>
@@ -137,19 +131,12 @@ function App() {
                   <td>{item.player}</td>
                   <td>{item.mapName}</td>
                   <td style={{ color: '#4a90e2' }}>{item.closestPoint}</td>
-                  <td style={{ color: '#666', fontSize: '12px' }}>{item.dist.toFixed(1)} y</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {parsedData.length === 0 && rawData.trim() !== '' && (
-            <p style={{ textAlign: 'center', padding: '20px', color: '#e74c3c' }}>⚠ 偵測到的地圖不屬於「{activeGroup}」組別</p>
-          )}
         </div>
       </div>
     </div>
   );
 }
-
-// 注意：這裡移除了 export default App;
-// App 會直接成為一個全域函數，被 index.html 中的 Babel 渲染器調用
