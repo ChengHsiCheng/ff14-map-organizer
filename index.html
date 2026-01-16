@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FF14 藏寶圖路徑優化器</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* 基本樣式，您可以根據需要修改 */
+        body { margin: 0; background: #111; color: #eee; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .container { display: flex; height: 100vh; }
+        .sidebar { width: 280px; border-right: 1px solid #333; padding: 20px; background: #161616; overflow-y: auto; flex-shrink: 0; }
+        .main { flex: 1; padding: 30px; display: flex; flex-direction: column; overflow-y: auto; }
+        h2, h3, h4 { margin-top: 0; color: #ff9800; }
+        h2 { margin-bottom: 20px; }
+        textarea { 
+            width: 100%; height: 120px; background: #1e1e1e; color: #fff; border: 1px solid #444; 
+            padding: 15px; border-radius: 4px; box-sizing: border-box; font-size: 14px; outline: none; resize: vertical;
+        }
+        button { 
+            padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; 
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        button:hover:not(:disabled) { opacity: 0.9; }
+        button:disabled { cursor: not-allowed; opacity: 0.6; }
+        .btn-group { 
+            width: 100%; margin-bottom: 8px; text-align: left; 
+            background: #2a2a2a; color: #aaa;
+        }
+        .btn-active { 
+            background: #ff9800; color: #000; 
+        }
+        .btn-copy { 
+            background: #27ae60; color: #fff; 
+        }
+        .btn-clear {
+            background: #444; color: #fff;
+        }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #181818; border-radius: 8px; overflow: hidden; }
+        thead { background: #252525; color: #ff9800; }
+        th { padding: 15px; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid #2a2a2a; }
+        tr:last-child td { border-bottom: none; }
+        .warning-message { text-align: center; padding: 20px; color: #e74c3c; background: #2a0000; border-radius: 4px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script src="mapData.js"></script>
+
+    <script type="text/babel" src="App.js"></script>
+
+    <script type="text/babel">
+        // 這邊是 App.js 的入口點，將它渲染出來
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />); // App 是從 App.js 載入的
+    </script>
+</body>
+</html>
