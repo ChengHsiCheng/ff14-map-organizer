@@ -94,7 +94,7 @@ function App() {
       </div>
 
       <div style={{ flex: 1, padding: '30px', display: 'flex', flexDirection: 'column' }}>
-        <h2>⚔️ 路線自動排序 (組別過濾模式)</h2>
+        <h2>路線自動排序</h2>
         <textarea
           value={rawData}
           onChange={(e) => setRawData(e.target.value)}
@@ -107,7 +107,7 @@ function App() {
             disabled={parsedData.length === 0}
             style={{ padding: '12px 30px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
           >
-            📋 複製 A=>B=>C
+            📋 複製順序
           </button>
           <button onClick={() => setRawData('')} style={{ padding: '12px 30px', background: '#444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
             🗑️ 清空
