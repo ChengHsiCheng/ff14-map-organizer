@@ -2,6 +2,7 @@ const { useState, useMemo } = React;
 
 function App() {
   const [rawData, setRawData] = useState('');
+  const [nameLimit, setNameLimit] = useState(2);
   const mapPresets = window.mapPresets;
   const [activeGroup, setActiveGroup] = useState(Object.keys(mapPresets)[0]);
   const currentSettings = mapPresets[activeGroup];
@@ -11,9 +12,7 @@ function App() {
   const parsedData = useMemo(() => {
     if (!rawData.trim()) return [];
     const lines = rawData.split('\n');
-
-    // 定義要刪除的伺服器清單
-    const servers = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦', '希瓦'];
+    const servers = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦'];
 
     const results = lines.map((line) => {
       const regex = /(?:\[\d+:\d+\])?\s*(?:\((?:.+?)\)|(?:.+?)[:：])?\s*?(.+?)\s*\(\s*(\d+\.?\d*)\s*[\s,，]+\s*(\d+\.?\d*)\s*\)/;
@@ -25,15 +24,17 @@ function App() {
       if (match) {
         let playerName = '未知玩家';
         if (nameMatch) {
-          // 1. 取得原始名字並去除特殊符號
           playerName = (nameMatch[1] || nameMatch[2]).trim().replace(/[]/g, '');
 
-          // 2. 檢查並刪除結尾的伺服器名稱
           servers.forEach(srv => {
             if (playerName.endsWith(srv)) {
               playerName = playerName.substring(0, playerName.length - srv.length);
             }
           });
+
+          if (nameLimit !== "none" && playerName.length > nameLimit) {
+            playerName = playerName.substring(0, nameLimit);
+          }
         }
 
         const mapName = match[1].replace(/[\s]/g, '').trim();
@@ -64,7 +65,7 @@ function App() {
       if (a.closestPoint !== b.closestPoint) return a.closestPoint.localeCompare(b.closestPoint);
       return a.dist - b.dist;
     });
-  }, [rawData, currentSettings]);
+  }, [rawData, currentSettings, nameLimit]);
 
   const copyChainFormat = () => {
     if (parsedData.length === 0) return;
@@ -98,7 +99,7 @@ function App() {
           ))}
         </div>
 
-        <div style={{ background: '#252525', padding: '16px', borderRadius: '8px', border: '1px solid #333', marginTop: '20px' }}>
+        <div style={{ background: '#252525', padding: '16px', borderRadius: '8px', border: '1px solid #333' }}>
           <h4 style={{ color: '#888', fontSize: '11px', marginBottom: '8px', textTransform: 'uppercase' }}>當前區域清單</h4>
           <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
             {currentSettings.map((map, idx) => (
@@ -130,7 +131,8 @@ function App() {
             }}
           />
 
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+          {/* 按鈕與長度選擇區 */}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
             <button
               onClick={copyChainFormat}
               disabled={parsedData.length === 0}
@@ -139,11 +141,24 @@ function App() {
                 cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1
               }}
             >
-              📋 複製
+              📋 複製順序
             </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', background: '#252525', padding: '4px 12px', borderRadius: '6px', border: '1px solid #444' }}>
+              <span style={{ fontSize: '13px', color: '#aaa', marginRight: '8px' }}>保留字數:</span>
+              <select
+                value={nameLimit}
+                onChange={(e) => setNameLimit(e.target.value === "none" ? "none" : parseInt(e.target.value))}
+                style={{ background: '#fff', color: '#000', border: 'none', padding: '4px 8px', borderRadius: '4px', outline: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+              >
+                {[2, 3, 4, 5, 6, 7, 8].map(num => <option key={num} value={num}>{num}</option>)}
+                <option value="none">全部</option>
+              </select>
+            </div>
+
             <button
               onClick={() => setRawData('')}
-              style={{ padding: '10px 24px', background: '#424242', color: '#eee', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+              style={{ padding: '10px 24px', background: '#424242', color: '#eee', border: 'none', borderRadius: '6px', cursor: 'pointer', marginLeft: 'auto' }}
             >
               🗑️ 清空
             </button>
@@ -185,12 +200,11 @@ function App() {
             💡 使用說明
           </h3>
           <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '13px', color: '#bbb', lineHeight: '1.8' }}>
-            <li>切換對應版本。</li>
-            <li style={{ marginTop: '10px' }}>複製大家的座標貼入框內，每一行要換行。</li>
+            <li>左邊選擇地圖</li>
+            <li>在上方輸入框貼上遊戲內聊天室座標</li>
+            <li>下方出現排序為正確</li>
+            <li>選擇名子保留字數並按下複製按鈕可以直接貼進遊戲聊天室</li>
           </ul>
-          <hr style={{ border: 'none', borderTop: '1px solid #333', margin: '20px 0' }} />
-          <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>
-          </p>
         </div>
 
       </div>
