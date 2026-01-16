@@ -12,15 +12,29 @@ function App() {
     if (!rawData.trim()) return [];
     const lines = rawData.split('\n');
     const results = lines.map((line) => {
-      const regex = /(?:\[\d+:\d+\])?(?:(.+?)[:：])?\s*?(.+?)\s*\(\s*(\d+\.?\d*)\s*[,，]\s*(\d+\.?\d*)\s*\)/;
+      // 支援 [時間](標記 名字) 或 [時間]名字: 以及寬空格座標
+      const regex = /(?:\[\d+:\d+\])?\s*(?:\((?:.+?)\)|(?:.+?)[:：])?\s*?(.+?)\s*\(\s*(\d+\.?\d*)\s*[\s,，]+\s*(\d+\.?\d*)\s*\)/;
+
+      // 為了精準抓取括號內的名字，我們另外處理名字部分
+      const nameRegex = /(?:\[\d+:\d+\])?\s*(?:\((?:.*?)([^\s\(\)]+)\)|([^:：\s]+)[:：])/;
+
       const match = line.match(regex);
+      const nameMatch = line.match(nameRegex);
+
       if (match) {
-        const playerName = match[1] ? match[1].trim() : '未知玩家';
-        const mapName = match[2].replace(/[\s]/g, '').trim();
-        const x = parseFloat(match[3]);
-        const y = parseFloat(match[4]);
+        // 抓取名字：優先從括號或冒號前提取
+        let playerName = '未知玩家';
+        if (nameMatch) {
+          playerName = (nameMatch[1] || nameMatch[2]).trim().replace(/[]/g, '');
+        }
+
+        const mapName = match[1].replace(/[\s]/g, '').trim();
+        const x = parseFloat(match[2]);
+        const y = parseFloat(match[3]);
+
         const mapDef = currentSettings.find(m => m.name.trim() === mapName);
         if (!mapDef) return null;
+
         let bestPoint = { name: '未匹配', dist: 999 };
         mapDef.points.forEach(p => {
           const d = getDistance(x, y, p.x, p.y);
@@ -28,6 +42,7 @@ function App() {
             bestPoint = { name: p.name, dist: d };
           }
         });
+
         return {
           player: playerName, mapName, x, y, closestPoint: bestPoint.name,
           dist: bestPoint.dist, priority: mapDef.priority
@@ -124,7 +139,6 @@ function App() {
           </button>
         </div>
 
-        {/* 表格區塊 */}
         <div style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <div style={{ overflowY: 'auto', flex: 1 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>

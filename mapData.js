@@ -41,8 +41,17 @@ window.mapPresets = {
       ]
     },
     {
-      name: '黑風海',
+      name: '珂露西亞島',
       priority: 5,
+      points: [
+        { name: '特美拉村', x: 12.9, y: 8.9 },
+        { name: '工匠村', x: 16.5, y: 29.2 },
+        { name: '滯潮村', x: 34.8, y: 27.2 }
+      ]
+    },
+    {
+      name: '黑風海',
+      priority: 6,
       points: [
         { name: '鰭人潮池', x: 32.6, y: 17.4 }
       ]
