@@ -11,21 +11,29 @@ function App() {
   const parsedData = useMemo(() => {
     if (!rawData.trim()) return [];
     const lines = rawData.split('\n');
-    const results = lines.map((line) => {
-      // 支援 [時間](標記 名字) 或 [時間]名字: 以及寬空格座標
-      const regex = /(?:\[\d+:\d+\])?\s*(?:\((?:.+?)\)|(?:.+?)[:：])?\s*?(.+?)\s*\(\s*(\d+\.?\d*)\s*[\s,，]+\s*(\d+\.?\d*)\s*\)/;
 
-      // 為了精準抓取括號內的名字，我們另外處理名字部分
+    // 定義要刪除的伺服器清單
+    const servers = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦', '希瓦'];
+
+    const results = lines.map((line) => {
+      const regex = /(?:\[\d+:\d+\])?\s*(?:\((?:.+?)\)|(?:.+?)[:：])?\s*?(.+?)\s*\(\s*(\d+\.?\d*)\s*[\s,，]+\s*(\d+\.?\d*)\s*\)/;
       const nameRegex = /(?:\[\d+:\d+\])?\s*(?:\((?:.*?)([^\s\(\)]+)\)|([^:：\s]+)[:：])/;
 
       const match = line.match(regex);
       const nameMatch = line.match(nameRegex);
 
       if (match) {
-        // 抓取名字：優先從括號或冒號前提取
         let playerName = '未知玩家';
         if (nameMatch) {
-          playerName = (nameMatch[1] || nameMatch[2]).trim().replace(/[]/g, '');
+          // 1. 取得原始名字並去除特殊符號
+          playerName = (nameMatch[1] || nameMatch[2]).trim().replace(/[]/g, '');
+
+          // 2. 檢查並刪除結尾的伺服器名稱
+          servers.forEach(srv => {
+            if (playerName.endsWith(srv)) {
+              playerName = playerName.substring(0, playerName.length - srv.length);
+            }
+          });
         }
 
         const mapName = match[1].replace(/[\s]/g, '').trim();
@@ -103,71 +111,91 @@ function App() {
       </div>
 
       {/* 右側主區域 */}
-      <div style={{ flex: 1, padding: '30px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden' }}>
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '1.5rem', margin: '0 0 4px 0', color: '#fff' }}>⚔️ 路線自動排序</h2>
-          <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>當前模式：{activeGroup}</p>
-        </div>
+      <div style={{ flex: 1, padding: '30px', display: 'flex', flexDirection: 'row', gap: '24px', boxSizing: 'border-box', overflow: 'hidden' }}>
 
-        <textarea
-          value={rawData}
-          onChange={(e) => setRawData(e.target.value)}
-          placeholder="貼上聊天內容清單..."
-          style={{
-            width: '100%', height: '120px', background: '#1e1e1e', color: '#fff', border: '1px solid #444',
-            padding: '16px', borderRadius: '8px', fontSize: '14px', outline: 'none', resize: 'none',
-            boxSizing: 'border-box', marginBottom: '20px', flexShrink: 0
-          }}
-        />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '1.5rem', margin: '0 0 4px 0', color: '#fff' }}>⚔️ 路線自動排序</h2>
+            <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>當前模式：{activeGroup}</p>
+          </div>
 
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-          <button
-            onClick={copyChainFormat}
-            disabled={parsedData.length === 0}
+          <textarea
+            value={rawData}
+            onChange={(e) => setRawData(e.target.value)}
+            placeholder="貼上聊天內容清單..."
             style={{
-              padding: '10px 24px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '6px',
-              cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1
+              width: '100%', height: '120px', background: '#1e1e1e', color: '#fff', border: '1px solid #444',
+              padding: '16px', borderRadius: '8px', fontSize: '14px', outline: 'none', resize: 'none',
+              boxSizing: 'border-box', marginBottom: '20px', flexShrink: 0
             }}
-          >
-            📋 複製
-          </button>
-          <button
-            onClick={() => setRawData('')}
-            style={{ padding: '10px 24px', background: '#424242', color: '#eee', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-          >
-            🗑️ 清空
-          </button>
-        </div>
+          />
 
-        <div style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ overflowY: 'auto', flex: 1 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-              <thead style={{ position: 'sticky', top: 0, background: '#252525', zIndex: 1 }}>
-                <tr>
-                  <th style={{ padding: '12px 16px', color: '#ffa726', width: '50px' }}>#</th>
-                  <th style={{ padding: '12px 16px' }}>玩家名稱</th>
-                  <th style={{ padding: '12px 16px' }}>區域</th>
-                  <th style={{ padding: '12px 16px' }}>傳送點</th>
-                </tr>
-              </thead>
-              <tbody>
-                {parsedData.map((item, index) => (
-                  <tr key={index} style={{ borderBottom: '1px solid #2d2d2d' }}>
-                    <td style={{ padding: '12px 16px', fontWeight: 'bold', color: '#ffa726' }}>{index + 1}</td>
-                    <td style={{ padding: '12px 16px', color: '#fff' }}>{item.player}</td>
-                    <td style={{ padding: '12px 16px' }}>{item.mapName}</td>
-                    <td style={{ padding: '12px 16px', color: '#64b5f6' }}>{item.closestPoint}</td>
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+            <button
+              onClick={copyChainFormat}
+              disabled={parsedData.length === 0}
+              style={{
+                padding: '10px 24px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '6px',
+                cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1
+              }}
+            >
+              📋 複製
+            </button>
+            <button
+              onClick={() => setRawData('')}
+              style={{ padding: '10px 24px', background: '#424242', color: '#eee', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+            >
+              🗑️ 清空
+            </button>
+          </div>
+
+          <div style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                <thead style={{ position: 'sticky', top: 0, background: '#252525', zIndex: 1 }}>
+                  <tr>
+                    <th style={{ padding: '12px 16px', color: '#ffa726', width: '50px' }}>#</th>
+                    <th style={{ padding: '12px 16px' }}>玩家名稱</th>
+                    <th style={{ padding: '12px 16px' }}>區域</th>
+                    <th style={{ padding: '12px 16px' }}>傳送點</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {parsedData.length === 0 && (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#444' }}>
-                {rawData.trim() !== '' ? '⚠ 無相符座標' : '等待輸入...'}
-              </div>
-            )}
+                </thead>
+                <tbody>
+                  {parsedData.map((item, index) => (
+                    <tr key={index} style={{ borderBottom: '1px solid #2d2d2d' }}>
+                      <td style={{ padding: '12px 16px', fontWeight: 'bold', color: '#ffa726' }}>{index + 1}</td>
+                      <td style={{ padding: '12px 16px', color: '#fff' }}>{item.player}</td>
+                      <td style={{ padding: '12px 16px' }}>{item.mapName}</td>
+                      <td style={{ padding: '12px 16px', color: '#64b5f6' }}>{item.closestPoint}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {parsedData.length === 0 && (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#444' }}>
+                  {rawData.trim() !== '' ? '⚠ 無相符座標' : '等待輸入...'}
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        <div style={{ width: '280px', background: 'rgba(255, 167, 38, 0.05)', border: '1px solid rgba(255, 167, 38, 0.2)', borderRadius: '12px', padding: '24px', boxSizing: 'border-box', flexShrink: 0 }}>
+          <h3 style={{ color: '#ffa726', fontSize: '1rem', marginTop: 0, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            💡 使用說明
+          </h3>
+          <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '13px', color: '#bbb', lineHeight: '1.8' }}>
+            <li><b>左邊選地圖</b>：切換對應版本（如 G12 / G17）。</li>
+            <li style={{ marginTop: '10px' }}><b>貼上位置</b>：複製大家的座標貼入框內。</li>
+            <li style={{ marginTop: '10px' }}><b>自動排序</b>：系統會自動去除名字前的圖標與後方的伺服器名。</li>
+          </ul>
+          <hr style={{ border: 'none', borderTop: '1px solid #333', margin: '20px 0' }} />
+          <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>
+            當前已過濾伺服器：<br />
+            陸行鳥、莫古力、卡班庫爾等...
+          </p>
+        </div>
+
       </div>
     </div>
   );
