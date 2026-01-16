@@ -185,9 +185,8 @@ function App() {
             💡 使用說明
           </h3>
           <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '13px', color: '#bbb', lineHeight: '1.8' }}>
-            <li><b>左邊選地圖</b>：切換對應版本（如 G12 / G17）。</li>
-            <li style={{ marginTop: '10px' }}><b>貼上位置</b>：複製大家的座標貼入框內，每一行要換行。</li>
-            <li style={{ marginTop: '10px' }}><b>自動排序</b>：系統會自動去除名字前的圖標與後方的伺服器名。</li>
+            <li>切換對應版本。</li>
+            <li style={{ marginTop: '10px' }}>複製大家的座標貼入框內，每一行要換行。</li>
           </ul>
           <hr style={{ border: 'none', borderTop: '1px solid #333', margin: '20px 0' }} />
           <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>
