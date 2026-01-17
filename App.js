@@ -161,7 +161,7 @@ function App() {
             <button
               onClick={copyChainFormat}
               disabled={parsedData.length === 0}
-              style={{ padding: '10px 20px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1 }}
+              style={{ fontSize: '18px', padding: '10px 20px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1 }}
             >
               📋 完整順序
             </button>
@@ -169,7 +169,7 @@ function App() {
             <button
               onClick={() => performCopy(currentIndex)}
               disabled={parsedData.length === 0}
-              style={{ padding: '8px 16px', background: '#1565c0', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1 }}
+              style={{ fontSize: '18px', padding: '8px 16px', background: '#1565c0', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1 }}
             >
               🎯 複製當前
             </button>
@@ -177,7 +177,7 @@ function App() {
             <button
               onClick={nextTargetAndCopy}
               disabled={parsedData.length === 0}
-              style={{ padding: '10px 20px', background: '#ffa726', color: '#000', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1 }}
+              style={{ fontSize: '18px', padding: '10px 20px', background: '#ffa726', color: '#000', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1 }}
             >
               下一位並複製 ➡
             </button>
