@@ -3,6 +3,7 @@ const { useState, useMemo } = React;
 function App() {
   const [rawData, setRawData] = useState('');
   const [nameLimit, setNameLimit] = useState(2);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const mapPresets = window.mapPresets;
   const [activeGroup, setActiveGroup] = useState(Object.keys(mapPresets)[0]);
   const currentSettings = mapPresets[activeGroup];
@@ -10,9 +11,10 @@ function App() {
   const getDistance = (x1, y1, x2, y2) => Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 
   const parsedData = useMemo(() => {
+    setCurrentIndex(0);
     if (!rawData.trim()) return [];
     const lines = rawData.split('\n');
-    const servers = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦'];
+    const servers = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦', '希瓦', '拉姆', '利維亞桑', '莫古力', '白銀鄉'];
 
     const results = lines.map((line) => {
       const regex = /(?:\[\d+:\d+\])?\s*(?:\((?:.+?)\)|(?:.+?)[:：])?\s*?(.+?)\s*\(\s*(\d+\.?\d*)\s*[\s,，]+\s*(\d+\.?\d*)\s*\)/;
@@ -24,7 +26,7 @@ function App() {
       if (match) {
         let playerName = '未知玩家';
         if (nameMatch) {
-          playerName = (nameMatch[1] || nameMatch[2]).trim().replace(/[]/g, '');
+          playerName = (nameMatch[1] || nameMatch[2]).trim().replace(/[\uE000-\uF8FF]/g, '');
 
           servers.forEach(srv => {
             if (playerName.endsWith(srv)) {
@@ -67,17 +69,42 @@ function App() {
     });
   }, [rawData, currentSettings, nameLimit]);
 
+  // 優化後的複製格式
+  const performCopy = (index) => {
+    if (parsedData.length === 0 || index >= parsedData.length) return;
+
+    const item = parsedData[index];
+    let pointLabel = item.closestPoint;
+
+    if (index > 0) {
+      const prevItem = parsedData[index - 1];
+      if (prevItem.closestPoint === item.closestPoint && prevItem.mapName === item.mapName) {
+        pointLabel = "繼續";
+      }
+    }
+
+    // 優化後的格式： [名字]  地圖 (地點) (X, Y)
+    const text = `[${item.player}]  ${item.mapName} (${pointLabel}) (${item.x}, ${item.y})`;
+    navigator.clipboard.writeText(text);
+  };
+
   const copyChainFormat = () => {
     if (parsedData.length === 0) return;
-    const chain = parsedData.map(item => item.player).join('=>');
+    const chain = parsedData.map(item => item.player).join('  '); // 連接符也美化
     navigator.clipboard.writeText(chain);
-    alert(`已複製順序：${chain}`);
+    alert(`已複製完整順序：${chain}`);
+  };
+
+  const nextTargetAndCopy = () => {
+    if (parsedData.length === 0) return;
+    const nextIdx = (currentIndex + 1) % parsedData.length;
+    setCurrentIndex(nextIdx);
+    performCopy(nextIdx);
   };
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', background: '#0f0f0f', color: '#e0e0e0', fontFamily: '"Microsoft JhengHei", sans-serif', overflow: 'hidden' }}>
 
-      {/* 左側側邊欄 */}
       <div style={{ width: '260px', background: '#1a1a1a', borderRight: '1px solid #333', padding: '24px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', flexShrink: 0 }}>
         <h3 style={{ color: '#ffa726', fontSize: '1.2rem', marginBottom: '24px', borderLeft: '4px solid #ffa726', paddingLeft: '12px' }}>地圖組選擇</h3>
 
@@ -101,7 +128,7 @@ function App() {
 
         <div style={{ background: '#252525', padding: '16px', borderRadius: '8px', border: '1px solid #333' }}>
           <h4 style={{ color: '#888', fontSize: '11px', marginBottom: '8px', textTransform: 'uppercase' }}>當前區域清單</h4>
-          <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
+          <div style={{ maxHeight: '120px', overflowY: 'auto' }}>
             {currentSettings.map((map, idx) => (
               <div key={idx} style={{ fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>
                 <span style={{ color: '#ffa726', marginRight: '8px' }}>•</span> {map.name}
@@ -111,12 +138,11 @@ function App() {
         </div>
       </div>
 
-      {/* 右側主區域 */}
       <div style={{ flex: 1, padding: '30px', display: 'flex', flexDirection: 'row', gap: '24px', boxSizing: 'border-box', overflow: 'hidden' }}>
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '1.5rem', margin: '0 0 4px 0', color: '#fff' }}>⚔️ 路線自動排序</h2>
+            <h2 style={{ fontSize: '1.5rem', margin: '0 0 4px 0', color: '#fff' }}>挖寶路線排序</h2>
             <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>當前模式：{activeGroup}</p>
           </div>
 
@@ -125,31 +151,43 @@ function App() {
             onChange={(e) => setRawData(e.target.value)}
             placeholder="貼上聊天內容清單..."
             style={{
-              width: '100%', height: '120px', background: '#1e1e1e', color: '#fff', border: '1px solid #444',
+              width: '100%', height: '100px', background: '#1e1e1e', color: '#fff', border: '1px solid #444',
               padding: '16px', borderRadius: '8px', fontSize: '14px', outline: 'none', resize: 'none',
               boxSizing: 'border-box', marginBottom: '20px', flexShrink: 0
             }}
           />
 
-          {/* 按鈕與長度選擇區 */}
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center' }}>
             <button
               onClick={copyChainFormat}
               disabled={parsedData.length === 0}
-              style={{
-                padding: '10px 24px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '6px',
-                cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1
-              }}
+              style={{ padding: '10px 20px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1 }}
             >
-              📋 複製順序
+              📋 完整順序
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', background: '#252525', padding: '4px 12px', borderRadius: '6px', border: '1px solid #444' }}>
-              <span style={{ fontSize: '13px', color: '#aaa', marginRight: '8px' }}>保留字數:</span>
+            <button
+              onClick={() => performCopy(currentIndex)}
+              disabled={parsedData.length === 0}
+              style={{ padding: '10px 20px', background: '#1565c0', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1 }}
+            >
+              🎯 複製當前
+            </button>
+
+            <button
+              onClick={nextTargetAndCopy}
+              disabled={parsedData.length === 0}
+              style={{ padding: '10px 20px', background: '#ffa726', color: '#000', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1 }}
+            >
+              下一位並複製 ➡
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', background: '#252525', padding: '4px 10px', borderRadius: '6px', border: '1px solid #444' }}>
+              <span style={{ fontSize: '12px', color: '#aaa', marginRight: '8px' }}>字數:</span>
               <select
                 value={nameLimit}
                 onChange={(e) => setNameLimit(e.target.value === "none" ? "none" : parseInt(e.target.value))}
-                style={{ background: '#fff', color: '#000', border: 'none', padding: '4px 8px', borderRadius: '4px', outline: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+                style={{ background: '#fff', color: '#000', border: 'none', padding: '2px 6px', borderRadius: '4px', outline: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
               >
                 {[2, 3, 4, 5, 6, 7, 8].map(num => <option key={num} value={num}>{num}</option>)}
                 <option value="none">全部</option>
@@ -157,8 +195,8 @@ function App() {
             </div>
 
             <button
-              onClick={() => setRawData('')}
-              style={{ padding: '10px 24px', background: '#424242', color: '#eee', border: 'none', borderRadius: '6px', cursor: 'pointer', marginLeft: 'auto' }}
+              onClick={() => { setRawData(''); setCurrentIndex(0); }}
+              style={{ padding: '10px 15px', background: '#424242', color: '#eee', border: 'none', borderRadius: '6px', cursor: 'pointer', marginLeft: 'auto' }}
             >
               🗑️ 清空
             </button>
@@ -173,24 +211,28 @@ function App() {
                     <th style={{ padding: '12px 16px' }}>玩家名稱</th>
                     <th style={{ padding: '12px 16px' }}>區域</th>
                     <th style={{ padding: '12px 16px' }}>傳送點</th>
+                    <th style={{ padding: '12px 16px' }}>座標</th>
                   </tr>
                 </thead>
                 <tbody>
                   {parsedData.map((item, index) => (
-                    <tr key={index} style={{ borderBottom: '1px solid #2d2d2d' }}>
-                      <td style={{ padding: '12px 16px', fontWeight: 'bold', color: '#ffa726' }}>{index + 1}</td>
+                    <tr
+                      key={index}
+                      style={{
+                        borderBottom: '1px solid #2d2d2d',
+                        background: index === currentIndex ? 'rgba(255, 167, 38, 0.15)' : 'transparent',
+                        boxShadow: index === currentIndex ? 'inset 4px 0 0 #ffa726' : 'none'
+                      }}
+                    >
+                      <td style={{ padding: '12px 16px', fontWeight: 'bold', color: index === currentIndex ? '#fff' : '#ffa726' }}>{index + 1}</td>
                       <td style={{ padding: '12px 16px', color: '#fff' }}>{item.player}</td>
                       <td style={{ padding: '12px 16px' }}>{item.mapName}</td>
                       <td style={{ padding: '12px 16px', color: '#64b5f6' }}>{item.closestPoint}</td>
+                      <td style={{ padding: '12px 16px', color: '#888', fontSize: '12px' }}>({item.x}, {item.y})</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {parsedData.length === 0 && (
-                <div style={{ padding: '40px', textAlign: 'center', color: '#444' }}>
-                  {rawData.trim() !== '' ? '⚠ 無相符座標' : '等待輸入...'}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -204,9 +246,9 @@ function App() {
             <li>在上方輸入框貼上遊戲內聊天室座標</li>
             <li>下方出現排序為正確</li>
             <li>選擇名子保留字數並按下複製按鈕可以直接貼進遊戲聊天室</li>
+            <li>可以複製當前成員或切換至下一位成員</li>
           </ul>
         </div>
-
       </div>
     </div>
   );
