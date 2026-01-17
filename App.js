@@ -151,7 +151,7 @@ function App() {
             onChange={(e) => setRawData(e.target.value)}
             placeholder="貼上聊天內容清單..."
             style={{
-              width: '100%', height: '100px', background: '#1e1e1e', color: '#fff', border: '1px solid #444',
+              width: '100%', height: '120px', background: '#1e1e1e', color: '#fff', border: '1px solid #444',
               padding: '16px', borderRadius: '8px', fontSize: '14px', outline: 'none', resize: 'none',
               boxSizing: 'border-box', marginBottom: '20px', flexShrink: 0
             }}
@@ -169,7 +169,7 @@ function App() {
             <button
               onClick={() => performCopy(currentIndex)}
               disabled={parsedData.length === 0}
-              style={{ padding: '10px 20px', background: '#1565c0', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1 }}
+              style={{ padding: '8px 16px', background: '#1565c0', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: parsedData.length === 0 ? 0.5 : 1 }}
             >
               🎯 複製當前
             </button>
@@ -224,11 +224,11 @@ function App() {
                         boxShadow: index === currentIndex ? 'inset 4px 0 0 #ffa726' : 'none'
                       }}
                     >
-                      <td style={{ padding: '12px 16px', fontWeight: 'bold', color: index === currentIndex ? '#fff' : '#ffa726' }}>{index + 1}</td>
-                      <td style={{ padding: '12px 16px', color: '#fff' }}>{item.player}</td>
-                      <td style={{ padding: '12px 16px' }}>{item.mapName}</td>
-                      <td style={{ padding: '12px 16px', color: '#64b5f6' }}>{item.closestPoint}</td>
-                      <td style={{ padding: '12px 16px', color: '#888', fontSize: '12px' }}>({item.x}, {item.y})</td>
+                      <td style={{ padding: '6px 16px', fontWeight: 'bold', color: index === currentIndex ? '#fff' : '#ffa726' }}>{index + 1}</td>
+                      <td style={{ padding: '6px 16px', color: '#fff' }}>{item.player}</td>
+                      <td style={{ padding: '6px 16px' }}>{item.mapName}</td>
+                      <td style={{ padding: '6px 16px', color: '#64b5f6' }}>{item.closestPoint}</td>
+                      <td style={{ padding: '6px 16px', color: '#888', fontSize: '12px' }}>({item.x}, {item.y})</td>
                     </tr>
                   ))}
                 </tbody>
@@ -238,9 +238,7 @@ function App() {
         </div>
 
         <div style={{ width: '280px', background: 'rgba(255, 167, 38, 0.05)', border: '1px solid rgba(255, 167, 38, 0.2)', borderRadius: '12px', padding: '24px', boxSizing: 'border-box', flexShrink: 0 }}>
-          <h3 style={{ color: '#ffa726', fontSize: '1rem', marginTop: 0, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            💡 使用說明
-          </h3>
+          <h3 style={{ color: '#ffa726', fontSize: '1rem', marginTop: 0, marginBottom: '16px' }}>💡 跑圖操作說明</h3>
           <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '13px', color: '#bbb', lineHeight: '1.8' }}>
             <li>左邊選擇地圖</li>
             <li>在上方輸入框貼上遊戲內聊天室座標</li>
