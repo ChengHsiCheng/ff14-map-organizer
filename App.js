@@ -8,6 +8,7 @@ function App() {
   const mapPresets = window.mapPresets;
   const [activeGroup, setActiveGroup] = useState(Object.keys(mapPresets)[0]);
   const currentSettings = mapPresets[activeGroup];
+  const [showHelp, setShowHelp] = useState(true);
 
   const getDistance = (x1, y1, x2, y2) => Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 
@@ -117,14 +118,16 @@ function App() {
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', background: '#0f0f0f', color: '#e0e0e0', fontFamily: '"Microsoft JhengHei", sans-serif', overflow: 'hidden' }}>
       <div style={{ width: '260px', background: '#1a1a1a', borderRight: '1px solid #333', padding: '24px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', flexShrink: 0 }}>
-        <h3 style={{ color: '#ffa726', fontSize: '1.2rem', marginBottom: '24px', borderLeft: '4px solid #ffa726', paddingLeft: '12px' }}>地圖組選擇</h3>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <h3 style={{ color: '#ffa726', fontSize: '1.2rem', marginBottom: '20px', borderLeft: '4px solid #ffa726', paddingLeft: '12px' }}>地圖組</h3>
+
+        <div className="custom-scroll" style={{ flex: '0 1 350px', overflowY: 'auto', marginBottom: '24px', paddingRight: '10px' }}>
           {Object.keys(mapPresets).map(groupName => (
             <button key={groupName} onClick={() => { setActiveGroup(groupName); setRawData(''); setCurrentPosRaw(''); }}
               style={{
-                width: '100%', padding: '12px 16px', marginBottom: '10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                textAlign: 'left', fontSize: '14px', transition: 'all 0.2s',
-                background: activeGroup === groupName ? '#ffa726' : '#2d2d2d',
+                width: '100%', padding: '12px 16px', marginBottom: '8px', borderRadius: '6px', border: '1px solid',
+                cursor: 'pointer', textAlign: 'left', fontSize: '14px', transition: 'all 0.2s',
+                background: activeGroup === groupName ? '#ffa726' : '#252525',
+                borderColor: activeGroup === groupName ? '#ffa726' : '#333',
                 color: activeGroup === groupName ? '#000' : '#bbb',
                 fontWeight: activeGroup === groupName ? 'bold' : 'normal'
               }}>
@@ -132,11 +135,16 @@ function App() {
             </button>
           ))}
         </div>
-        <div style={{ background: '#252525', padding: '16px', borderRadius: '8px', border: '1px solid #333' }}>
-          <h4 style={{ color: '#888', fontSize: '11px', marginBottom: '8px', textTransform: 'uppercase' }}>當前區域清單</h4>
-          <div style={{ maxHeight: '120px', overflowY: 'auto' }}>
+
+        <div style={{ background: '#252525', padding: '16px', borderRadius: '8px', border: '1px solid #333', height: '210px', display: 'flex', flexDirection: 'column' }}>
+          <h4 style={{ color: '#ffa726', fontSize: '11px', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>當前區域</h4>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
             {currentSettings.map((map, idx) => (
-              <div key={idx} style={{ fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>
+              <div key={idx} style={{
+                fontSize: '13px', color: '#ccc', padding: '6px 8px', borderRadius: '4px',
+                background: idx % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent',
+                display: 'flex', alignItems: 'center'
+              }}>
                 <span style={{ color: '#ffa726', marginRight: '8px' }}>•</span> {map.name}
               </div>
             ))}
@@ -144,18 +152,17 @@ function App() {
         </div>
       </div>
 
-      <div style={{ flex: 1, padding: '30px', display: 'flex', flexDirection: 'row', gap: '24px', boxSizing: 'border-box', overflow: 'hidden' }}>
+      <div style={{ flex: 1, padding: '30px', display: 'flex', flexDirection: 'row', gap: '24px', boxSizing: 'border-box', overflow: 'hidden', position: 'relative' }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexShrink: 0 }}>
             <div style={{ flex: 1 }}>
               <h2 style={{ fontSize: '1.5rem', margin: '0 0 4px 0', color: '#fff' }}>挖寶路線排序</h2>
-              <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>當前模式：{activeGroup}</p>
+              <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>模式：{activeGroup}</p>
             </div>
             <div style={{ width: '320px' }}>
               <span style={{ fontSize: '13px', color: '#ffa726', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>📍 當前位置 (作為起點優先排序)</span>
               <input
-                type="text"
-                value={currentPosRaw}
+                type="text" value={currentPosRaw}
                 onChange={(e) => setCurrentPosRaw(e.target.value)}
                 placeholder="貼上座標或聊天紀錄..."
                 style={{
@@ -216,9 +223,26 @@ function App() {
           </div>
         </div>
 
-        <div style={{ width: '280px', background: 'rgba(255, 167, 38, 0.05)', border: '1px solid rgba(255, 167, 38, 0.2)', borderRadius: '12px', padding: '24px', boxSizing: 'border-box', flexShrink: 0 }}>
-          <h3 style={{ color: '#ffa726', fontSize: '1rem', marginTop: 0, marginBottom: '16px' }}>💡 跑圖操作說明</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px', color: '#bbb', lineHeight: '1.6' }}>
+        <button
+          onClick={() => setShowHelp(!showHelp)}
+          style={{
+            position: 'absolute', right: showHelp ? '290px' : '10px', top: '30px', zIndex: 10,
+            background: '#ffa726', border: 'none', borderRadius: '4px 0 0 4px', padding: '8px 4px',
+            cursor: 'pointer', color: '#000', fontWeight: 'bold', transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}>
+          {showHelp ? '▶' : '◀'}
+        </button>
+
+        <div style={{
+          width: showHelp ? '280px' : '0px', opacity: showHelp ? 1 : 0,
+          pointerEvents: showHelp ? 'auto' : 'none',
+          background: 'rgba(255, 167, 38, 0.05)', border: '1px solid rgba(255, 167, 38, 0.2)',
+          borderRadius: '12px', padding: showHelp ? '24px' : '0px',
+          boxSizing: 'border-box', flexShrink: 0,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', overflow: 'hidden'
+        }}>
+          <h3 style={{ color: '#ffa726', fontSize: '1rem', marginTop: 0, marginBottom: '16px', whiteSpace: 'nowrap' }}>💡 跑圖說明</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px', color: '#bbb', lineHeight: '1.6', minWidth: '230px' }}>
             <div>
               <b style={{ color: '#eee', display: 'block', marginBottom: '4px' }}>🗺️ 地圖選擇</b>
               在左側面板選取對應的地圖組。
@@ -238,6 +262,12 @@ function App() {
           </div>
         </div>
       </div>
+      <style>{`
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
+      `}</style>
     </div>
   );
 }

@@ -122,5 +122,5 @@ window.mapPresets = {
   ],
   'G5 (未完成)': [
 
-  ],
+  ]
 }
