@@ -218,13 +218,24 @@ function App() {
 
         <div style={{ width: '280px', background: 'rgba(255, 167, 38, 0.05)', border: '1px solid rgba(255, 167, 38, 0.2)', borderRadius: '12px', padding: '24px', boxSizing: 'border-box', flexShrink: 0 }}>
           <h3 style={{ color: '#ffa726', fontSize: '1rem', marginTop: 0, marginBottom: '16px' }}>💡 跑圖操作說明</h3>
-          <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '13px', color: '#bbb', lineHeight: '1.8' }}>
-            <li><b>📍 當前位置</b>：貼入目前座標。若你在地圖組內，該地圖的人會排到最前面，並按距離遠近排序。</li>
-            <li>左邊選擇地圖。</li>
-            <li>在上方輸入框貼上遊戲內聊天室座標清單。</li>
-            <li>下方出現排序為正確。</li>
-            <li>可以複製當前成員或切換至下一位成員。</li>
-          </ul>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px', color: '#bbb', lineHeight: '1.6' }}>
+            <div>
+              <b style={{ color: '#eee', display: 'block', marginBottom: '4px' }}>🗺️ 地圖選擇</b>
+              在左側面板選取對應的地圖組。
+            </div>
+            <div>
+              <b style={{ color: '#eee', display: 'block', marginBottom: '4px' }}>📥 輸入座標</b>
+              將遊戲內的聊天室座標清單貼入上方輸入框。
+            </div>
+            <div>
+              <b style={{ color: '#eee', display: 'block', marginBottom: '4px' }}>📍 當前位置</b>
+              貼入目前座標。若你在地圖組內，該地圖的人會排到最前面，並按距離遠近排序。
+            </div>
+            <div>
+              <b style={{ color: '#eee', display: 'block', marginBottom: '4px' }}>📋 複製排序</b>
+              下方列表顯示正確排序，可點擊按鈕複製當前目標或切換至下一位。
+            </div>
+          </div>
         </div>
       </div>
     </div>
