@@ -17,7 +17,6 @@ function App() {
     if (!rawData.trim()) return [];
 
     const fullRegex = /(?:\[\d+:\d+\])?\s*(?:\((?:.+?)\)|(?:.+?)[:：])?\s*?(.+?)\s*\(\s*(\d+\.?\d*)\s*[\s,，]+\s*(\d+\.?\d*)\s*\)/;
-
     const startMatch = currentPosRaw.match(fullRegex);
     const startPoint = startMatch ? {
       mapName: startMatch[1].replace(/[\s]/g, '').trim(),
@@ -28,28 +27,25 @@ function App() {
     const lines = rawData.split('\n');
     const servers = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦', '希瓦', '拉姆', '利維亞桑', '莫古力', '白銀鄉'];
 
-    // 1. 解析原始資料
+    // 1. 基礎解析與預處理
     let pool = lines.map((line) => {
       const match = line.match(fullRegex);
       const nameRegex = /(?:\[\d+:\d+\])?\s*(?:\((?:.*?)([^\s\(\)]+)\)|([^:：\s]+)[:：])/;
       const nameMatch = line.match(nameRegex);
-
       if (match) {
         let playerName = '未知玩家';
         if (nameMatch) {
           playerName = (nameMatch[1] || nameMatch[2]).trim().replace(/[\uE000-\uF8FF]/g, '');
-          servers.forEach(srv => {
-            if (playerName.endsWith(srv)) playerName = playerName.substring(0, playerName.length - srv.length);
-          });
+          servers.forEach(srv => { if (playerName.endsWith(srv)) playerName = playerName.substring(0, playerName.length - srv.length); });
           if (nameLimit !== "none" && playerName.length > nameLimit) playerName = playerName.substring(0, nameLimit);
         }
-
         const mapName = match[1].replace(/[\s]/g, '').trim();
         const x = parseFloat(match[2]);
         const y = parseFloat(match[3]);
         const mapDef = currentSettings.find(m => m.name.trim() === mapName);
         if (!mapDef) return null;
 
+        // 找出最近的傳送點資訊
         let bestTp = { name: '未匹配', dist: 999, x: 0, y: 0 };
         mapDef.points.forEach(p => {
           const d = getDistance(x, y, p.x, p.y);
@@ -65,7 +61,7 @@ function App() {
     }).filter(item => item !== null);
 
     // 2. 確定地圖順序
-    const sorted = [];
+    const finalSorted = [];
     const mapsInPool = [...new Set(pool.map(p => p.mapName))].sort((a, b) => {
       if (startPoint) {
         if (a === startPoint.mapName) return -1;
@@ -76,50 +72,49 @@ function App() {
       return pA - pB;
     });
 
-    // 3. 核心尋路邏輯：尋找地圖內的最佳一條龍路徑
-    let lastRefPoint = startPoint;
+    // 3. 核心尋路：分區排序法
+    let lastRef = startPoint;
 
     mapsInPool.forEach(mapName => {
       let mapPoints = pool.filter(p => p.mapName === mapName);
 
       while (mapPoints.length > 0) {
-        let nextIndex = 0;
+        // A. 找出目前剩餘點位中，離「最近傳送點」最近的一組
+        // 這樣可以保證我們是一組一組傳送點清過去
+        let nextGroupTpName = "";
+        let minTpDist = Infinity;
+        mapPoints.forEach(p => {
+          if (p.tpDist < minTpDist) {
+            minTpDist = p.tpDist;
+            nextGroupTpName = p.closestPoint;
+          }
+        });
 
-        // 如果是該地圖的第一站，尋找適合的「端點」
-        if (!lastRefPoint || lastRefPoint.mapName !== mapName) {
-          let bestScore = -Infinity;
-          mapPoints.forEach((p, idx) => {
-            // 計算端點分數：該點與其他點的平均距離（越高表示越邊緣）
-            let edgeScore = 0;
-            if (mapPoints.length > 1) {
-              edgeScore = mapPoints.reduce((acc, other) => acc + getDistance(p.x, p.y, other.x, other.y), 0) / mapPoints.length;
-            }
-            // 權衡：邊緣程度(1.5) 減去 離傳送點距離(1.0)
-            // 這能確保選出的點是在地圖的一端，且離傳送點不會遠得太離譜
-            let score = (edgeScore * 1.5) - p.tpDist;
-            if (score > bestScore) {
-              bestScore = score;
-              nextIndex = idx;
-            }
-          });
-        } else {
-          // 在地圖內移動時，嚴格尋找離上一點最近的下一個點
-          let minD = Infinity;
-          mapPoints.forEach((p, idx) => {
-            const d = getDistance(p.x, p.y, lastRefPoint.x, lastRefPoint.y);
-            if (d < minD) {
-              minD = d;
-              nextIndex = idx;
+        // B. 提取該傳送點組的所有點
+        let groupPoints = mapPoints.filter(p => p.closestPoint === nextGroupTpName);
+        mapPoints = mapPoints.filter(p => p.closestPoint !== nextGroupTpName);
+
+        // C. 組內排序：從該組離傳送點最近的點開始，依序找最近鄰居
+        let groupLastRef = { x: groupPoints[0].tpX, y: groupPoints[0].tpY }; // 以傳送點座標為組起點
+        while (groupPoints.length > 0) {
+          let nextInGroupIdx = 0;
+          let minInGroupDist = Infinity;
+          groupPoints.forEach((p, idx) => {
+            const d = getDistance(p.x, p.y, groupLastRef.x, groupLastRef.y);
+            if (d < minInGroupDist) {
+              minInGroupDist = d;
+              nextInGroupIdx = idx;
             }
           });
+          const selected = groupPoints.splice(nextInGroupIdx, 1)[0];
+          finalSorted.push(selected);
+          groupLastRef = selected;
+          lastRef = selected;
         }
-
-        lastRefPoint = mapPoints.splice(nextIndex, 1)[0];
-        sorted.push(lastRefPoint);
       }
     });
 
-    return sorted;
+    return finalSorted;
   }, [rawData, currentPosRaw, currentSettings, nameLimit]);
 
   const performCopy = (index) => {
@@ -169,7 +164,6 @@ function App() {
             </button>
           ))}
         </div>
-
         <div style={{ background: '#252525', padding: '16px', borderRadius: '8px', border: '1px solid #333', height: '210px', display: 'flex', flexDirection: 'column' }}>
           <h4 style={{ color: '#ffa726', fontSize: '11px', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>當前區域</h4>
           <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -187,7 +181,7 @@ function App() {
           <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexShrink: 0 }}>
             <div style={{ flex: 1 }}>
               <h2 style={{ fontSize: '1.5rem', margin: '0 0 4px 0', color: '#fff' }}>挖寶路線排序</h2>
-              <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>模式：{activeGroup}</p>
+              <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>模式：{activeGroup} (分區尋路優化)</p>
             </div>
             <div style={{ width: '320px' }}>
               <span style={{ fontSize: '13px', color: '#ffa726', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>📍 當前位置 (作為起點優先排序)</span>
@@ -241,25 +235,18 @@ function App() {
           </div>
         </div>
 
-        <button onClick={() => setShowHelp(!showHelp)} style={{ position: 'absolute', right: showHelp ? '290px' : '10px', top: '30px', zIndex: 10, background: '#ffa726', border: 'none', borderRadius: '4px 0 0 4px', padding: '8px 4px', cursor: 'pointer', color: '#000', fontWeight: 'bold', transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+        <button onClick={() => setShowHelp(!showHelp)} style={{ position: 'absolute', right: showHelp ? '290px' : '10px', top: '30px', zIndex: 10, background: '#ffa726', border: 'none', borderRadius: '4px 0 0 4px', padding: '8px 4px', cursor: 'pointer', color: '#000', fontWeight: 'bold', transition: 'right 0.3s' }}>
           {showHelp ? '▶' : '◀'}
         </button>
 
-        <div style={{ width: showHelp ? '280px' : '0px', opacity: showHelp ? 1 : 0, pointerEvents: showHelp ? 'auto' : 'none', background: 'rgba(255, 167, 38, 0.05)', border: '1px solid rgba(255, 167, 38, 0.2)', borderRadius: '12px', padding: showHelp ? '24px' : '0px', boxSizing: 'border-box', flexShrink: 0, transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', overflow: 'hidden' }}>
-          <h3 style={{ color: '#ffa726', fontSize: '1rem', marginTop: 0, marginBottom: '16px', whiteSpace: 'nowrap' }}>💡 跑圖說明</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px', color: '#bbb', lineHeight: '1.6', minWidth: '230px' }}>
-            <div><b style={{ color: '#eee', display: 'block', marginBottom: '4px' }}>🗺️ 地圖選擇</b>在左側面板選取對應的地圖組。</div>
-            <div><b style={{ color: '#eee', display: 'block', marginBottom: '4px' }}>📥 輸入座標</b>將遊戲內的聊天室座標清單貼入上方輸入框。</div>
-            <div><b style={{ color: '#eee', display: 'block', marginBottom: '4px' }}>📍 當前位置</b>貼入目前座標。若你在地圖組內，該地圖的人會排到最前面，並按距離遠近排序。</div>
-            <div><b style={{ color: '#eee', display: 'block', marginBottom: '4px' }}>📋 複製排序</b>下方列表顯示正確排序，可點擊按鈕複製當前目標或切換至下一位。</div>
-          </div>
+        <div style={{ width: showHelp ? '280px' : '0px', opacity: showHelp ? 1 : 0, background: 'rgba(255, 167, 38, 0.05)', border: '1px solid rgba(255, 167, 38, 0.2)', borderRadius: '12px', padding: showHelp ? '24px' : '0px', boxSizing: 'border-box', flexShrink: 0, transition: 'all 0.3s', overflow: 'hidden' }}>
+          <h3 style={{ color: '#ffa726', fontSize: '1rem', marginTop: 0, marginBottom: '16px' }}>💡 分區導航</h3>
+          <p style={{ fontSize: '13px', color: '#bbb' }}>系統會將點位按傳送點分組，傳送後從最近的點開始清，避免在地圖內來回折返。</p>
         </div>
       </div>
       <style>{`
         .custom-scroll::-webkit-scrollbar { width: 5px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
       `}</style>
     </div>
   );
