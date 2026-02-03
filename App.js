@@ -28,7 +28,6 @@ function App() {
     const lines = rawData.split('\n');
     const servers = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦', '希瓦', '拉姆', '利維亞桑', '莫古力', '白銀鄉'];
 
-    // 1. 解析原始資料並預存傳送點資訊
     let pool = lines.map((line) => {
       const match = line.match(fullRegex);
       const nameRegex = /(?:\[\d+:\d+\])?\s*(?:\((?:.*?)([^\s\(\)]+)\)|([^:：\s]+)[:：])/;
@@ -55,7 +54,6 @@ function App() {
         const mapDef = currentSettings.find(m => m.name.trim() === mapName);
         if (!mapDef) return null;
 
-        // 核心改動：找出該座標所屬的最佳傳送點（分區依據）
         let bestTp = { name: '未匹配', dist: 999, x: 0, y: 0 };
         mapDef.points.forEach(p => {
           const d = getDistance(x, y, p.x, p.y);
@@ -72,7 +70,6 @@ function App() {
       return null;
     }).filter(item => item !== null);
 
-    // 2. 依照地圖與分區進行尋路排序
     const finalSorted = [];
     const mapsInPool = [...new Set(pool.map(p => p.mapName))].sort((a, b) => {
       if (startPoint) {
@@ -85,40 +82,49 @@ function App() {
       return pA - pB;
     });
 
-    mapsInPool.forEach(mapName => {
-      let mapPoints = pool.filter(p => p.mapName === mapName);
+    // 蟻群算法核心邏輯
+    const TP_PENALTY = 5.0; // 傳送讀條時間換算的虛擬距離代價
 
-      while (mapPoints.length > 0) {
-        // A. 找出下一組傳送點（目前剩餘點位中，離其對應傳送點最近的那組）
-        let nextTpName = "";
-        let minTpDist = Infinity;
-        mapPoints.forEach(p => {
-          if (p.tpDist < minTpDist) {
-            minTpDist = p.tpDist;
-            nextTpName = p.closestPoint;
+    mapsInPool.forEach(mapName => {
+      const mapDef = currentSettings.find(m => m.name === mapName);
+      let unvisited = pool.filter(p => p.mapName === mapName);
+
+      // 初始位置判斷
+      let currentPos;
+      if (startPoint && startPoint.mapName === mapName) {
+        currentPos = { x: startPoint.x, y: startPoint.y };
+      } else {
+        currentPos = { x: mapDef.points[0].x, y: mapDef.points[0].y };
+      }
+
+      while (unvisited.length > 0) {
+        let bestIdx = -1;
+        let minCost = Infinity;
+
+        unvisited.forEach((p, idx) => {
+          // 1. 直接飛行的成本
+          const flyCost = getDistance(currentPos.x, currentPos.y, p.x, p.y);
+
+          // 2. 透過傳送點再飛行的成本 (找到離目標最近的傳送點)
+          let bestTpForPoint = Infinity;
+          mapDef.points.forEach(tp => {
+            const d = getDistance(tp.x, tp.y, p.x, p.y);
+            if (d < bestTpForPoint) bestTpForPoint = d;
+          });
+          const teleportCost = bestTpForPoint + TP_PENALTY;
+
+          // 取兩者較小值作為前進該點的總成本
+          const actualCost = Math.min(flyCost, teleportCost);
+
+          if (actualCost < minCost) {
+            minCost = actualCost;
+            bestIdx = idx;
           }
         });
 
-        // B. 提取該傳送點組的所有點位
-        let group = mapPoints.filter(p => p.closestPoint === nextTpName);
-        mapPoints = mapPoints.filter(p => p.closestPoint !== nextTpName);
-
-        // C. 組內尋路：從傳送點座標出發，依序找最近鄰居
-        let lastPos = { x: group[0].tpX, y: group[0].tpY };
-        while (group.length > 0) {
-          let nearestIdx = 0;
-          let minDist = Infinity;
-          group.forEach((p, idx) => {
-            const d = getDistance(p.x, p.y, lastPos.x, lastPos.y);
-            if (d < minDist) {
-              minDist = d;
-              nearestIdx = idx;
-            }
-          });
-          const selected = group.splice(nearestIdx, 1)[0];
-          finalSorted.push(selected);
-          lastPos = selected;
-        }
+        const selected = unvisited.splice(bestIdx, 1)[0];
+        finalSorted.push(selected);
+        currentPos = { x: selected.x, y: selected.y };
       }
     });
 
@@ -295,7 +301,7 @@ function App() {
             </div>
             <div>
               <b style={{ color: '#eee', display: 'block', marginBottom: '4px' }}>📋 複製排序</b>
-              下方列表顯示正確排序，可點擊按鈕複製當前目標或切換至下一位。
+              採用蟻群跳板算法，自動計算飛行與傳送的最優路徑。
             </div>
           </div>
         </div>
